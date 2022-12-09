@@ -2,5 +2,5 @@
 	path = cpp/YAKL
 	url = git@github.com:mrnorman/YAKL.git
 [submodule "heat_quad_cpp/YAKL"]
-	path = heat_quad_cpp/YAKL
+	path = heatEqnQuad/YAKL
 	url = git@github.com:mrnorman/YAKL.git
