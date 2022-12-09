@@ -1,10 +1,8 @@
-
 //////////////////////////////////////////////////////////////////////////////////////////
-// miniWeather
-// Author: Matt Norman <normanmr@ornl.gov>  , Oak Ridge National Laboratory
-// This code simulates dry, stratified, compressible, non-hydrostatic fluid flows
-// For documentation, please see the attached documentation in the "documentation" folder
-//
+// heatEqnQuad
+// Author: Mark Petersen, LANL
+// This code solves the 2D heat equation u_t = nu del u, on a quad mesh
+// Branched from miniWeather app by Matt Norman, Dec 2022
 //////////////////////////////////////////////////////////////////////////////////////////
 
 #include <stdlib.h>
@@ -15,7 +13,7 @@
 #include "pnetcdf.h"
 #include <chrono>
 
-// We're going to define all arrays on the host because this doesn't use parallel_for
+// We're going to define all arrays on the host because this serial code doesn't use parallel_for
 typedef yakl::Array<real  ,1,yakl::memHost> real1d;
 typedef yakl::Array<real  ,2,yakl::memHost> real2d;
 typedef yakl::Array<real  ,3,yakl::memHost> real3d;
@@ -31,7 +29,7 @@ typedef yakl::Array<double const,2,yakl::memHost> doubConst2d;
 typedef yakl::Array<double const,3,yakl::memHost> doubConst3d;
 
 ///////////////////////////////////////////////////////////////////////////////////////
-// Variables that are initialized but remain static over the coure of the simulation
+// Variables that are initialized but remain static over the course of the simulation
 ///////////////////////////////////////////////////////////////////////////////////////
 struct Fixed_data {
   int nx, nz;                 //Number of local grid cells in the x- and z- dimensions for this MPI task
@@ -244,7 +242,7 @@ void compute_tendencies_x( realConst3d state , real3d const &tend , real dt , Fi
 
   real3d flux("flux",NUM_VARS,nz,nx+1);
 
-  //Compute the hyperviscosity coeficient
+  //Compute the hyperviscosity coefficient
   real hv_coef = -hv_beta * dx / (16*dt);
   /////////////////////////////////////////////////
   // TODO: MAKE THESE 2 LOOPS A PARALLEL_FOR
@@ -308,7 +306,7 @@ void compute_tendencies_z( realConst3d state , real3d const &tend , real dt , Fi
 
   real3d flux("flux",NUM_VARS,nz+1,nx);
 
-  //Compute the hyperviscosity coeficient
+  //Compute the hyperviscosity coefficient
   real hv_coef = -hv_beta * dz / (16*dt);
   /////////////////////////////////////////////////
   // TODO: MAKE THESE 2 LOOPS A PARALLEL_FOR
