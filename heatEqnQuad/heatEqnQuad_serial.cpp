@@ -220,7 +220,7 @@ void semi_discrete_step( realConst3d state_init , real3d const &state_forcing , 
           real x = (i_beg + i+0.5)*dx;
           real z = (k_beg + k+0.5)*dz;
           real wpert = sample_ellipse_cosine( x,z , 0.01 , xlen/8,1000., 500.,500. );
-          tend(ID_WMOM,k,i) += wpert*hy_dens_cell(hs+k);
+          tend(ID_VVEL,k,i) += wpert*hy_dens_cell(hs+k);
         }
         state_out(ll,hs+k,hs+i) = state_init(ll,hs+k,hs+i) + dt * tend(ll,k,i);
       }
@@ -265,17 +265,15 @@ void compute_tendencies_x( realConst3d state , real3d const &tend , real dt , Fi
       }
 
       //Compute density, u-wind, w-wind, potential temperature, and pressure (r,u,w,t,p respectively)
-      real r = vals(ID_DENS) + hy_dens_cell(hs+k);
-      real u = vals(ID_UMOM) / r;
-      real w = vals(ID_WMOM) / r;
-      real t = ( vals(ID_RHOT) + hy_dens_theta_cell(hs+k) ) / r;
+      real r = vals(ID_SSH ) + hy_dens_cell(hs+k);
+      real u = vals(ID_UVEL) / r;
+      real w = vals(ID_VVEL) / r;
       real p = C0*pow((r*t),gamm);
 
       //Compute the flux vector
-      flux(ID_DENS,k,i) = r*u     - hv_coef*d3_vals(ID_DENS);
-      flux(ID_UMOM,k,i) = r*u*u+p - hv_coef*d3_vals(ID_UMOM);
-      flux(ID_WMOM,k,i) = r*u*w   - hv_coef*d3_vals(ID_WMOM);
-      flux(ID_RHOT,k,i) = r*u*t   - hv_coef*d3_vals(ID_RHOT);
+      flux(ID_SSH ,k,i) = r*u     - hv_coef*d3_vals(ID_SSH );
+      flux(ID_UVEL,k,i) = r*u*u+p - hv_coef*d3_vals(ID_UVEL);
+      flux(ID_VVEL,k,i) = r*u*w   - hv_coef*d3_vals(ID_VVEL);
     }
   }
 
@@ -329,21 +327,19 @@ void compute_tendencies_z( realConst3d state , real3d const &tend , real dt , Fi
       }
 
       //Compute density, u-wind, w-wind, potential temperature, and pressure (r,u,w,t,p respectively)
-      real r = vals(ID_DENS) + hy_dens_int(k);
-      real u = vals(ID_UMOM) / r;
-      real w = vals(ID_WMOM) / r;
-      real t = ( vals(ID_RHOT) + hy_dens_theta_int(k) ) / r;
+      real r = vals(ID_SSH ) + hy_dens_int(k);
+      real u = vals(ID_UVEL) / r;
+      real w = vals(ID_VVEL) / r;
       real p = C0*pow((r*t),gamm) - hy_pressure_int(k);
       if (k == 0 || k == nz) {
         w                = 0;
-        d3_vals(ID_DENS) = 0;
+        d3_vals(ID_SSH ) = 0;
       }
 
       //Compute the flux vector with hyperviscosity
-      flux(ID_DENS,k,i) = r*w     - hv_coef*d3_vals(ID_DENS);
-      flux(ID_UMOM,k,i) = r*w*u   - hv_coef*d3_vals(ID_UMOM);
-      flux(ID_WMOM,k,i) = r*w*w+p - hv_coef*d3_vals(ID_WMOM);
-      flux(ID_RHOT,k,i) = r*w*t   - hv_coef*d3_vals(ID_RHOT);
+      flux(ID_SSH ,k,i) = r*w     - hv_coef*d3_vals(ID_SSH );
+      flux(ID_UVEL,k,i) = r*w*u   - hv_coef*d3_vals(ID_UVEL);
+      flux(ID_VVEL,k,i) = r*w*w+p - hv_coef*d3_vals(ID_VVEL);
     }
   }
 
@@ -355,8 +351,8 @@ void compute_tendencies_z( realConst3d state , real3d const &tend , real dt , Fi
     for (int k=0; k<nz; k++) {
       for (int i=0; i<nx; i++) {
         tend(ll,k,i) = -( flux(ll,k+1,i) - flux(ll,k,i) ) / dz;
-        if (ll == ID_WMOM) {
-          tend(ll,k,i) -= state(ID_DENS,hs+k,hs+i)*grav;
+        if (ll == ID_VVEL) {
+          tend(ll,k,i) -= state(ID_SSH ,hs+k,hs+i)*grav;
         }
       }
     }
@@ -406,8 +402,7 @@ void set_halo_values_x( real3d const &state , Fixed_data const &fixed_data ) {
         for (int i=0; i<hs; i++) {
           real z = (k_beg + k+0.5)*dz;
           if (abs(z-3*zlen/4) <= zlen/16) {
-            state(ID_UMOM,hs+k,i) = (state(ID_DENS,hs+k,i)+hy_dens_cell(hs+k)) * 50.;
-            state(ID_RHOT,hs+k,i) = (state(ID_DENS,hs+k,i)+hy_dens_cell(hs+k)) * 298. - hy_dens_theta_cell(hs+k);
+            state(ID_UVEL,hs+k,i) = (state(ID_SSH ,hs+k,i)+hy_dens_cell(hs+k)) * 50.;
           }
         }
       }
@@ -428,12 +423,12 @@ void set_halo_values_z( real3d const &state , Fixed_data const &fixed_data ) {
   /////////////////////////////////////////////////
   for (int ll=0; ll<NUM_VARS; ll++) {
     for (int i=0; i<nx+2*hs; i++) {
-      if (ll == ID_WMOM) {
+      if (ll == ID_VVEL) {
         state(ll,0      ,i) = 0.;
         state(ll,1      ,i) = 0.;
         state(ll,nz+hs  ,i) = 0.;
         state(ll,nz+hs+1,i) = 0.;
-      } else if (ll == ID_UMOM) {
+      } else if (ll == ID_UVEL) {
         state(ll,0      ,i) = state(ll,hs     ,i) / hy_dens_cell(hs     ) * hy_dens_cell(0      );
         state(ll,1      ,i) = state(ll,hs     ,i) / hy_dens_cell(hs     ) * hy_dens_cell(1      );
         state(ll,nz+hs  ,i) = state(ll,nz+hs-1,i) / hy_dens_cell(nz+hs-1) * hy_dens_cell(nz+hs  );
@@ -540,10 +535,9 @@ void init( real3d &state , real &dt , Fixed_data &fixed_data ) {
           if (data_spec_int == DATA_SPEC_INJECTION      ) { injection      (x,z,r,u,w,t,hr,ht); }
 
           //Store into the fluid state array
-          state(ID_DENS,k,i) += r                         * qweights(ii)*qweights(kk);
-          state(ID_UMOM,k,i) += (r+hr)*u                  * qweights(ii)*qweights(kk);
-          state(ID_WMOM,k,i) += (r+hr)*w                  * qweights(ii)*qweights(kk);
-          state(ID_RHOT,k,i) += ( (r+hr)*(t+ht) - hr*ht ) * qweights(ii)*qweights(kk);
+          state(ID_SSH ,k,i) += r                         * qweights(ii)*qweights(kk);
+          state(ID_UVEL,k,i) += (r+hr)*u                  * qweights(ii)*qweights(kk);
+          state(ID_VVEL,k,i) += (r+hr)*w                  * qweights(ii)*qweights(kk);
         }
       }
     }
@@ -772,10 +766,9 @@ void output( realConst3d state , real etime , int &num_out , Fixed_data const &f
   /////////////////////////////////////////////////
   for (int k=0; k<nz; k++) {
     for (int i=0; i<nx; i++) {
-      dens (k,i) = state(ID_DENS,hs+k,hs+i);
-      uwnd (k,i) = state(ID_UMOM,hs+k,hs+i) / ( hy_dens_cell(hs+k) + state(ID_DENS,hs+k,hs+i) );
-      wwnd (k,i) = state(ID_WMOM,hs+k,hs+i) / ( hy_dens_cell(hs+k) + state(ID_DENS,hs+k,hs+i) );
-      theta(k,i) = ( state(ID_RHOT,hs+k,hs+i) + hy_dens_theta_cell(hs+k) ) / ( hy_dens_cell(hs+k) + state(ID_DENS,hs+k,hs+i) ) - hy_dens_theta_cell(hs+k) / hy_dens_cell(hs+k);
+      dens (k,i) = state(ID_SSH ,hs+k,hs+i);
+      uwnd (k,i) = state(ID_UVEL,hs+k,hs+i) / ( hy_dens_cell(hs+k) + state(ID_SSH ,hs+k,hs+i) );
+      wwnd (k,i) = state(ID_VVEL,hs+k,hs+i) / ( hy_dens_cell(hs+k) + state(ID_SSH ,hs+k,hs+i) );
     }
   }
 
@@ -833,10 +826,9 @@ void reductions( realConst3d state , double &mass , double &te , Fixed_data cons
   te   = 0;
   for (int k=0; k<nz; k++) {
     for (int i=0; i<nx; i++) {
-      double r  =   state(ID_DENS,hs+k,hs+i) + hy_dens_cell(hs+k);             // Density
-      double u  =   state(ID_UMOM,hs+k,hs+i) / r;                              // U-wind
-      double w  =   state(ID_WMOM,hs+k,hs+i) / r;                              // W-wind
-      double th = ( state(ID_RHOT,hs+k,hs+i) + hy_dens_theta_cell(hs+k) ) / r; // Potential Temperature (theta)
+      double r  =   state(ID_SSH ,hs+k,hs+i) + hy_dens_cell(hs+k);             // Density
+      double u  =   state(ID_UVEL,hs+k,hs+i) / r;                              // U-wind
+      double w  =   state(ID_VVEL,hs+k,hs+i) / r;                              // W-wind
       double p  = C0*pow(r*th,gamm);                               // Pressure
       double t  = th / pow(p0/p,rd/cp);                            // Temperature
       double ke = r*(u*u+w*w);                                     // Kinetic Energy
