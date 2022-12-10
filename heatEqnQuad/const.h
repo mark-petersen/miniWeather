@@ -33,18 +33,14 @@ constexpr int hs        = 2;        //"Halo" size: number of cells beyond the MP
 constexpr int sten_size = 4;        //Size of the stencil used for interpolation
 
 //Parameters for indexing and flags
-constexpr int NUM_VARS = 4;           //Number of fluid state variables
-constexpr int ID_DENS  = 0;           //index for density ("rho")
-constexpr int ID_UMOM  = 1;           //index for momentum in the x-direction ("rho * u")
-constexpr int ID_WMOM  = 2;           //index for momentum in the z-direction ("rho * w")
-constexpr int ID_RHOT  = 3;           //index for density * potential temperature ("rho * theta")
+constexpr int NUM_VARS = 3;           //Number of fluid state variables
+constexpr int ID_UVEL  = 0;           //index for horizontal velocity in x
+constexpr int ID_VVEL  = 1;           //index for horizontal velocity in y
+constexpr int ID_SSH   = 2;           //index for sea surface height
 constexpr int DIR_X = 1;              //Integer constant to express that this operation is in the x-direction
 constexpr int DIR_Z = 2;              //Integer constant to express that this operation is in the z-direction
-constexpr int DATA_SPEC_COLLISION       = 1;
-constexpr int DATA_SPEC_THERMAL         = 2;
-constexpr int DATA_SPEC_GRAVITY_WAVES   = 3;
-constexpr int DATA_SPEC_DENSITY_CURRENT = 5;
-constexpr int DATA_SPEC_INJECTION       = 6;
+constexpr int DATA_SPEC_HEAT_EQN        = 1;
+constexpr int DATA_SPEC_SW_EQN          = 2;
 
 ///////////////////////////////////////////////////////////////////////////////////////
 // BEGIN USER-CONFIGURABLE PARAMETERS
