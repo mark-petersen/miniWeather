@@ -52,7 +52,7 @@ void injection            ( real x , real z , real &r , real &u , real &w , real
 void density_current      ( real x , real z , real &r , real &u , real &w , real &t , real &hr , real &ht );
 void gravity_waves        ( real x , real z , real &r , real &u , real &w , real &t , real &hr , real &ht );
 void thermal              ( real x , real z , real &r , real &u , real &w , real &t , real &hr , real &ht );
-void collision            ( real x , real z , real &r , real &u , real &w , real &t , real &hr , real &ht );
+void heat_eqn             ( real x , real z , real &r , real &u , real &w , real &t , real &hr , real &ht );
 void hydro_const_theta    ( real z                    , real &r , real &t );
 void hydro_const_bvfreq   ( real z , real bv_freq0    , real &r , real &t );
 real sample_ellipse_cosine( real x , real z , real amp , real x0 , real z0 , real xrad , real zrad );
@@ -109,7 +109,7 @@ int main(int argc, char **argv) {
       perform_timestep(state,dt,direction_switch,fixed_data);
       //Inform the user
       #ifndef NO_INFORM
-        if (mainproc) { printf( "Elapsed Time: %lf / %lf\n", etime , sim_time ); }
+        if (mainproc) { printf( "Elapsed Time: %lf / %lf, f= %lf exact= %lf\n", etime , sim_time, state(ID_RHOT,0,0), exp(-0.01*etime)); }
       #endif
       //Update the elapsed time and output counter
       etime = etime + dt;
@@ -160,14 +160,14 @@ void perform_timestep( real3d const &state , real dt , int &direction_switch , F
     semi_discrete_step( state , state_tmp , state_tmp , dt / 2 , DIR_X , fixed_data );
     semi_discrete_step( state , state_tmp , state     , dt / 1 , DIR_X , fixed_data );
     //z-direction second
-    semi_discrete_step( state , state     , state_tmp , dt / 3 , DIR_Z , fixed_data );
-    semi_discrete_step( state , state_tmp , state_tmp , dt / 2 , DIR_Z , fixed_data );
-    semi_discrete_step( state , state_tmp , state     , dt / 1 , DIR_Z , fixed_data );
+    //semi_discrete_step( state , state     , state_tmp , dt / 3 , DIR_Z , fixed_data );
+    //semi_discrete_step( state , state_tmp , state_tmp , dt / 2 , DIR_Z , fixed_data );
+    //semi_discrete_step( state , state_tmp , state     , dt / 1 , DIR_Z , fixed_data );
   } else {
     //z-direction second
-    semi_discrete_step( state , state     , state_tmp , dt / 3 , DIR_Z , fixed_data );
-    semi_discrete_step( state , state_tmp , state_tmp , dt / 2 , DIR_Z , fixed_data );
-    semi_discrete_step( state , state_tmp , state     , dt / 1 , DIR_Z , fixed_data );
+    //semi_discrete_step( state , state     , state_tmp , dt / 3 , DIR_Z , fixed_data );
+    //semi_discrete_step( state , state_tmp , state_tmp , dt / 2 , DIR_Z , fixed_data );
+    //semi_discrete_step( state , state_tmp , state     , dt / 1 , DIR_Z , fixed_data );
     //x-direction first
     semi_discrete_step( state , state     , state_tmp , dt / 3 , DIR_X , fixed_data );
     semi_discrete_step( state , state_tmp , state_tmp , dt / 2 , DIR_X , fixed_data );
@@ -205,7 +205,8 @@ void semi_discrete_step( realConst3d state_init , real3d const &state_forcing , 
     yakl::timer_stop("halo z");
     //Compute the time tendencies for the fluid state in the z-direction
     yakl::timer_start("tendencies z");
-    compute_tendencies_z(state_forcing,tend,dt,fixed_data);
+    // turn off z tendencies:
+    // compute_tendencies_z(state_forcing,tend,dt,fixed_data);
     yakl::timer_stop("tendencies z");
   }
 
@@ -276,7 +277,7 @@ void compute_tendencies_x( realConst3d state , real3d const &tend , real dt , Fi
       flux(ID_DENS,k,i) = r*u     - hv_coef*d3_vals(ID_DENS);
       flux(ID_UMOM,k,i) = r*u*u+p - hv_coef*d3_vals(ID_UMOM);
       flux(ID_WMOM,k,i) = r*u*w   - hv_coef*d3_vals(ID_WMOM);
-      flux(ID_RHOT,k,i) = r*u*t   - hv_coef*d3_vals(ID_RHOT);
+      flux(ID_RHOT,k,i) = 0.0; // exponential decay
     }
   }
 
@@ -288,6 +289,15 @@ void compute_tendencies_x( realConst3d state , real3d const &tend , real dt , Fi
     for (int k=0; k<nz; k++) {
       for (int i=0; i<nx; i++) {
         tend(ll,k,i) = -( flux(ll,k,i+1) - flux(ll,k,i) ) / dx;
+        if (ll == ID_DENS) {
+          tend(ll,k,i) += 1.0;
+        } else if (ll == ID_UMOM) {
+          tend(ll,k,i) += 1.0;
+        } else if (ll == ID_WMOM) {
+          tend(ll,k,i) += 1.0;
+        } else if (ll == ID_RHOT) {
+          tend(ll,k,i) -= 0.01*state(ll,k,i); // exponential decay
+        }
       }
     }
   }
@@ -371,8 +381,8 @@ void set_halo_values_x( real3d const &state , Fixed_data const &fixed_data ) {
   auto &nx                 = fixed_data.nx                ;
   auto &nz                 = fixed_data.nz                ;
   auto &k_beg              = fixed_data.k_beg             ;
-  auto &left_rank          = fixed_data.left_rank         ;
-  auto &right_rank         = fixed_data.right_rank        ;
+  //auto &left_rank          = fixed_data.left_rank         ;
+  //auto &right_rank         = fixed_data.right_rank        ;
   auto &myrank             = fixed_data.myrank            ;
   auto &hy_dens_cell       = fixed_data.hy_dens_cell      ;
   auto &hy_dens_theta_cell = fixed_data.hy_dens_theta_cell;
@@ -534,17 +544,17 @@ void init( real3d &state , real &dt , Fixed_data &fixed_data ) {
           real r, u, w, t, hr, ht;
 
           //Set the fluid state based on the user's specification
-          if (data_spec_int == DATA_SPEC_COLLISION      ) { collision      (x,z,r,u,w,t,hr,ht); }
+          if (data_spec_int == DATA_SPEC_HEAT_EQN       ) { heat_eqn       (x,z,r,u,w,t,hr,ht); }
           if (data_spec_int == DATA_SPEC_THERMAL        ) { thermal        (x,z,r,u,w,t,hr,ht); }
           if (data_spec_int == DATA_SPEC_GRAVITY_WAVES  ) { gravity_waves  (x,z,r,u,w,t,hr,ht); }
           if (data_spec_int == DATA_SPEC_DENSITY_CURRENT) { density_current(x,z,r,u,w,t,hr,ht); }
           if (data_spec_int == DATA_SPEC_INJECTION      ) { injection      (x,z,r,u,w,t,hr,ht); }
 
           //Store into the fluid state array
-          state(ID_DENS,k,i) += r                         * qweights(ii)*qweights(kk);
-          state(ID_UMOM,k,i) += (r+hr)*u                  * qweights(ii)*qweights(kk);
-          state(ID_WMOM,k,i) += (r+hr)*w                  * qweights(ii)*qweights(kk);
-          state(ID_RHOT,k,i) += ( (r+hr)*(t+ht) - hr*ht ) * qweights(ii)*qweights(kk);
+          state(ID_DENS,k,i) += r * qweights(ii)*qweights(kk);
+          state(ID_UMOM,k,i) += u * qweights(ii)*qweights(kk);
+          state(ID_WMOM,k,i) += w * qweights(ii)*qweights(kk);
+          state(ID_RHOT,k,i) += t * qweights(ii)*qweights(kk);
         }
       }
     }
@@ -567,7 +577,7 @@ void init( real3d &state , real &dt , Fixed_data &fixed_data ) {
       real z = (k_beg + k-hs+0.5)*dz;
       real r, u, w, t, hr, ht;
       //Set the fluid state based on the user's specification
-      if (data_spec_int == DATA_SPEC_COLLISION      ) { collision      (0.,z,r,u,w,t,hr,ht); }
+      if (data_spec_int == DATA_SPEC_HEAT_EQN       ) { heat_eqn       (0.,z,r,u,w,t,hr,ht); }
       if (data_spec_int == DATA_SPEC_THERMAL        ) { thermal        (0.,z,r,u,w,t,hr,ht); }
       if (data_spec_int == DATA_SPEC_GRAVITY_WAVES  ) { gravity_waves  (0.,z,r,u,w,t,hr,ht); }
       if (data_spec_int == DATA_SPEC_DENSITY_CURRENT) { density_current(0.,z,r,u,w,t,hr,ht); }
@@ -584,7 +594,7 @@ void init( real3d &state , real &dt , Fixed_data &fixed_data ) {
   for (int k=0; k<nz+1; k++) {
     real z = (k_beg + k)*dz;
     real r, u, w, t, hr, ht;
-    if (data_spec_int == DATA_SPEC_COLLISION      ) { collision      (0.,z,r,u,w,t,hr,ht); }
+    if (data_spec_int == DATA_SPEC_HEAT_EQN       ) { heat_eqn       (0.,z,r,u,w,t,hr,ht); }
     if (data_spec_int == DATA_SPEC_THERMAL        ) { thermal        (0.,z,r,u,w,t,hr,ht); }
     if (data_spec_int == DATA_SPEC_GRAVITY_WAVES  ) { gravity_waves  (0.,z,r,u,w,t,hr,ht); }
     if (data_spec_int == DATA_SPEC_DENSITY_CURRENT) { density_current(0.,z,r,u,w,t,hr,ht); }
@@ -655,18 +665,17 @@ void thermal( real x , real z , real &r , real &u , real &w , real &t , real &hr
 }
 
 
-//Colliding thermals
+//heat equation and friends
 //x and z are input coordinates at which to sample
-//r,u,w,t are output density, u-wind, w-wind, and potential temperature at that location
-//hr and ht are output background hydrostatic density and potential temperature at that location
-void collision( real x , real z , real &r , real &u , real &w , real &t , real &hr , real &ht ) {
-  hydro_const_theta(z,hr,ht);
+// t, think f: df/dt = -a*f, solution is exponential decay.
+//hr and ht are unused.
+void heat_eqn( real x , real z , real &r , real &u , real &w , real &t , real &hr , real &ht ) {
   r = 0.;
-  t = 0.;
   u = 0.;
   w = 0.;
-  t = t + sample_ellipse_cosine(x,z, 20.,xlen/2,2000.,2000.,2000.);
-  t = t + sample_ellipse_cosine(x,z,-20.,xlen/2,8000.,2000.,2000.);
+  t = 1.; //exponential decay
+  hr= 0.;
+  ht= 0.;
 }
 
 
