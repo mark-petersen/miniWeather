@@ -5,6 +5,7 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <mpi.h>
 #include <iostream>
 #include "const.h" // This contains the yakl definitions
 

@@ -56,16 +56,6 @@ include_directories(YAKL)
 
 
 ############################################################
-## simple YAKL tests
-############################################################
-add_executable(simple_yakl_tests simple_yakl_tests.cpp)
-set_target_properties(simple_yakl_tests PROPERTIES COMPILE_FLAGS "${EXE_DEFS}")
-
-target_link_libraries(simple_yakl_tests      "${LDFLAGS}")
-
-
-
-############################################################
 ## Compile the serial version
 ############################################################
 add_executable(serial miniWeather_serial.cpp)
@@ -93,6 +83,15 @@ target_link_libraries(mpi      "${LDFLAGS}")
 target_link_libraries(mpi_test "${LDFLAGS}")
 
 add_test(NAME MPI_TEST COMMAND ./check_output.sh ./mpi_test 1e-9 4.5e-5 ) 
+
+
+############################################################
+## simple YAKL tests
+############################################################
+add_executable(simple_yakl_tests simple_yakl_tests.cpp)
+set_target_properties(simple_yakl_tests PROPERTIES COMPILE_FLAGS "${EXE_DEFS}")
+
+target_link_libraries(simple_yakl_tests      "${LDFLAGS}")
 
 
 ############################################################
