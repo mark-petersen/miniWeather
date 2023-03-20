@@ -16,7 +16,6 @@ cmake -DCMAKE_CXX_COMPILER=mpic++                   \
       -DCMAKE_Fortran_COMPILER=mpif90               \
       -DYAKL_CUDA_FLAGS="-DHAVE_MPI -O3 --use_fast_math -arch sm_70 -ccbin mpic++ -I${PNETCDF_DIR}/include" \
       -DLDFLAGS="-L${PNETCDF_DIR}/lib -lpnetcdf"  \
-      -DCXXFLAGS="-I${PNETCDF_DIR}/include -L${PNETCDF_DIR}/lib -lpnetcdf" \
       -DNX=200                                      \
       -DNZ=100                                      \
       -DSIM_TIME=1000                               \

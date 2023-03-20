@@ -22,7 +22,12 @@ int main() {
   real3dHost workArray_cpu( "workArray" , nx,ny,nz ); // work array on the host (cpu)
 
   // initialize array on device
-  parallel_for( SimpleBounds<3>(nx,ny,nz) , YAKL_LAMBDA (int i, int j, int k) {
+  // Note that the first argument is option, may be a string or
+  //   parallel_for( YAKL_AUTO_LABEL(), ...
+  // Then the loops are labeled in the nvidia diagnostics output here with:
+  //   srun -n 1 -G4 nsys nvprof ./simple_yakl_tests  // on perlmutter
+  //   jsrun -n 1 -a 1 -c 1 -g 1 nvprof ./simple_yakl_tests  // on summit
+  parallel_for( "init array 1", SimpleBounds<3>(nx,ny,nz) , YAKL_LAMBDA (int i, int j, int k) {
     workArray(i,j,k) = i*100.0 + j*10.0 + k;
   });
   yakl::fence();
