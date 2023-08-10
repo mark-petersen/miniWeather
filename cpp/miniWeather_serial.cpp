@@ -12,7 +12,7 @@
 #include <mpi.h>
 #include <ctime>
 #include "const.h"
-#include "pnetcdf.h"
+//#include "pnetcdf.h"
 #include <chrono>
 
 // We're going to define all arrays on the host because this doesn't use parallel_for
@@ -740,33 +740,33 @@ void output( realConst3d state , real etime , int &num_out , Fixed_data const &f
   doub2d theta( "theta"    , nz,nx );
 
   //If the elapsed time is zero, create the file. Otherwise, open the file
-  if (etime == 0) {
-    //Create the file
-    ncwrap( ncmpi_create( MPI_COMM_WORLD , "output.nc" , NC_CLOBBER , MPI_INFO_NULL , &ncid ) , __LINE__ );
-    //Create the dimensions
-    ncwrap( ncmpi_def_dim( ncid , "t" , (MPI_Offset) NC_UNLIMITED , &t_dimid ) , __LINE__ );
-    ncwrap( ncmpi_def_dim( ncid , "x" , (MPI_Offset) nx_glob      , &x_dimid ) , __LINE__ );
-    ncwrap( ncmpi_def_dim( ncid , "z" , (MPI_Offset) nz_glob      , &z_dimid ) , __LINE__ );
-    //Create the variables
-    dimids[0] = t_dimid;
-    ncwrap( ncmpi_def_var( ncid , "t"     , NC_DOUBLE , 1 , dimids ,     &t_varid ) , __LINE__ );
-    dimids[0] = t_dimid; dimids[1] = z_dimid; dimids[2] = x_dimid;
-    ncwrap( ncmpi_def_var( ncid , "dens"  , NC_DOUBLE , 3 , dimids ,  &dens_varid ) , __LINE__ );
-    ncwrap( ncmpi_def_var( ncid , "uwnd"  , NC_DOUBLE , 3 , dimids ,  &uwnd_varid ) , __LINE__ );
-    ncwrap( ncmpi_def_var( ncid , "wwnd"  , NC_DOUBLE , 3 , dimids ,  &wwnd_varid ) , __LINE__ );
-    ncwrap( ncmpi_def_var( ncid , "theta" , NC_DOUBLE , 3 , dimids , &theta_varid ) , __LINE__ );
-    //End "define" mode
-    ncwrap( ncmpi_enddef( ncid ) , __LINE__ );
-  } else {
-    //Open the file
-    ncwrap( ncmpi_open( MPI_COMM_WORLD , "output.nc" , NC_WRITE , MPI_INFO_NULL , &ncid ) , __LINE__ );
-    //Get the variable IDs
-    ncwrap( ncmpi_inq_varid( ncid , "dens"  ,  &dens_varid ) , __LINE__ );
-    ncwrap( ncmpi_inq_varid( ncid , "uwnd"  ,  &uwnd_varid ) , __LINE__ );
-    ncwrap( ncmpi_inq_varid( ncid , "wwnd"  ,  &wwnd_varid ) , __LINE__ );
-    ncwrap( ncmpi_inq_varid( ncid , "theta" , &theta_varid ) , __LINE__ );
-    ncwrap( ncmpi_inq_varid( ncid , "t"     ,     &t_varid ) , __LINE__ );
-  }
+//  if (etime == 0) {
+//    //Create the file
+//    ncwrap( ncmpi_create( MPI_COMM_WORLD , "output.nc" , NC_CLOBBER , MPI_INFO_NULL , &ncid ) , __LINE__ );
+//    //Create the dimensions
+//    ncwrap( ncmpi_def_dim( ncid , "t" , (MPI_Offset) NC_UNLIMITED , &t_dimid ) , __LINE__ );
+//    ncwrap( ncmpi_def_dim( ncid , "x" , (MPI_Offset) nx_glob      , &x_dimid ) , __LINE__ );
+//    ncwrap( ncmpi_def_dim( ncid , "z" , (MPI_Offset) nz_glob      , &z_dimid ) , __LINE__ );
+//    //Create the variables
+//    dimids[0] = t_dimid;
+//    ncwrap( ncmpi_def_var( ncid , "t"     , NC_DOUBLE , 1 , dimids ,     &t_varid ) , __LINE__ );
+//    dimids[0] = t_dimid; dimids[1] = z_dimid; dimids[2] = x_dimid;
+//    ncwrap( ncmpi_def_var( ncid , "dens"  , NC_DOUBLE , 3 , dimids ,  &dens_varid ) , __LINE__ );
+//    ncwrap( ncmpi_def_var( ncid , "uwnd"  , NC_DOUBLE , 3 , dimids ,  &uwnd_varid ) , __LINE__ );
+//    ncwrap( ncmpi_def_var( ncid , "wwnd"  , NC_DOUBLE , 3 , dimids ,  &wwnd_varid ) , __LINE__ );
+//    ncwrap( ncmpi_def_var( ncid , "theta" , NC_DOUBLE , 3 , dimids , &theta_varid ) , __LINE__ );
+//    //End "define" mode
+//    ncwrap( ncmpi_enddef( ncid ) , __LINE__ );
+//  } else {
+//    //Open the file
+//    ncwrap( ncmpi_open( MPI_COMM_WORLD , "output.nc" , NC_WRITE , MPI_INFO_NULL , &ncid ) , __LINE__ );
+//    //Get the variable IDs
+//    ncwrap( ncmpi_inq_varid( ncid , "dens"  ,  &dens_varid ) , __LINE__ );
+//    ncwrap( ncmpi_inq_varid( ncid , "uwnd"  ,  &uwnd_varid ) , __LINE__ );
+//    ncwrap( ncmpi_inq_varid( ncid , "wwnd"  ,  &wwnd_varid ) , __LINE__ );
+//    ncwrap( ncmpi_inq_varid( ncid , "theta" , &theta_varid ) , __LINE__ );
+//    ncwrap( ncmpi_inq_varid( ncid , "t"     ,     &t_varid ) , __LINE__ );
+//  }
 
   //Store perturbed values in the temp arrays for output
   /////////////////////////////////////////////////
@@ -784,26 +784,26 @@ void output( realConst3d state , real etime , int &num_out , Fixed_data const &f
   //Write the grid data to file with all the processes writing collectively
   st3[0] = num_out; st3[1] = k_beg; st3[2] = i_beg;
   ct3[0] = 1      ; ct3[1] = nz   ; ct3[2] = nx   ;
-  ncwrap( ncmpi_put_vara_double_all( ncid ,  dens_varid , st3 , ct3 , dens.data()  ) , __LINE__ );
-  ncwrap( ncmpi_put_vara_double_all( ncid ,  uwnd_varid , st3 , ct3 , uwnd.data()  ) , __LINE__ );
-  ncwrap( ncmpi_put_vara_double_all( ncid ,  wwnd_varid , st3 , ct3 , wwnd.data()  ) , __LINE__ );
-  ncwrap( ncmpi_put_vara_double_all( ncid , theta_varid , st3 , ct3 , theta.data() ) , __LINE__ );
+//  ncwrap( ncmpi_put_vara_double_all( ncid ,  dens_varid , st3 , ct3 , dens.data()  ) , __LINE__ );
+//  ncwrap( ncmpi_put_vara_double_all( ncid ,  uwnd_varid , st3 , ct3 , uwnd.data()  ) , __LINE__ );
+//  ncwrap( ncmpi_put_vara_double_all( ncid ,  wwnd_varid , st3 , ct3 , wwnd.data()  ) , __LINE__ );
+//  ncwrap( ncmpi_put_vara_double_all( ncid , theta_varid , st3 , ct3 , theta.data() ) , __LINE__ );
 
   //Only the main process needs to write the elapsed time
   //Begin "independent" write mode
-  ncwrap( ncmpi_begin_indep_data(ncid) , __LINE__ );
+//  ncwrap( ncmpi_begin_indep_data(ncid) , __LINE__ );
   //write elapsed time to file
   if (mainproc) {
     st1[0] = num_out;
     ct1[0] = 1;
     double etimearr[1];
-    etimearr[0] = etime; ncwrap( ncmpi_put_vara_double( ncid , t_varid , st1 , ct1 , etimearr ) , __LINE__ );
+//    etimearr[0] = etime; ncwrap( ncmpi_put_vara_double( ncid , t_varid , st1 , ct1 , etimearr ) , __LINE__ );
   }
   //End "independent" write mode
-  ncwrap( ncmpi_end_indep_data(ncid) , __LINE__ );
+//  ncwrap( ncmpi_end_indep_data(ncid) , __LINE__ );
 
   //Close the file
-  ncwrap( ncmpi_close(ncid) , __LINE__ );
+//  ncwrap( ncmpi_close(ncid) , __LINE__ );
 
   //Increment the number of outputs
   num_out = num_out + 1;
@@ -811,13 +811,13 @@ void output( realConst3d state , real etime , int &num_out , Fixed_data const &f
 
 
 //Error reporting routine for the PNetCDF I/O
-void ncwrap( int ierr , int line ) {
-  if (ierr != NC_NOERR) {
-    printf("NetCDF Error at line: %d\n", line);
-    printf("%s\n",ncmpi_strerror(ierr));
-    exit(-1);
-  }
-}
+//void ncwrap( int ierr , int line ) {
+//  if (ierr != NC_NOERR) {
+//    printf("NetCDF Error at line: %d\n", line);
+//    //printf("%s\n",ncmpi_strerror(ierr));
+//    exit(-1);
+//  }
+//}
 
 
 void finalize() {
