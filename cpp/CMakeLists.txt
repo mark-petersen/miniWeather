@@ -63,13 +63,7 @@ set_target_properties(simple_yakl_tests PROPERTIES COMPILE_FLAGS "${EXE_DEFS}")
 
 target_link_libraries(simple_yakl_tests      "${LDFLAGS}")
 
-############################################################
-## read_mpas_netcdf_cpp.cpp
-############################################################
-add_executable(read_mpas_netcdf_cpp read_mpas_netcdf_cpp.cpp)
-set_target_properties(read_mpas_netcdf_cpp PROPERTIES COMPILE_FLAGS "${EXE_DEFS}")
 
-target_link_libraries(read_mpas_netcdf_cpp      "${LDFLAGS}")
 
 ############################################################
 ## Compile the serial version

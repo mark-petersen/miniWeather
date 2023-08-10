@@ -51,13 +51,6 @@ constexpr int DATA_SPEC_INJECTION       = 6;
 ///////////////////////////////////////////////////////////////////////////////////////
 //The x-direction length is twice as long as the z-direction length
 //So, you'll want to have nx_glob be twice as large as nz_glob
-// SET(TEST_DEFS "-D_NX=100 -D_NZ=50 -D_SIM_TIME=400 -D_OUT_FREQ=400 -D_DATA_SPEC=DATA_SPEC_THERMAL")
-int  constexpr _NX=100;
-int  constexpr _NZ=50;
-int  constexpr _SIM_TIME=400;
-int  constexpr _OUT_FREQ=400;
-int  constexpr _DATA_SPEC=DATA_SPEC_THERMAL;
-
 int  constexpr nx_glob = _NX;        // Number of total cells in the x-direction
 int  constexpr nz_glob = _NZ;        // Number of total cells in the z-direction
 real constexpr sim_time = _SIM_TIME; // How many seconds to run the simulation
